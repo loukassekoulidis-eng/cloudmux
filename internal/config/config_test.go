@@ -143,6 +143,26 @@ profiles:
 	assert.Equal(t, "https://myorg.awsapps.com/start", profiles[0].AWS.SSOStartURL)
 }
 
+func TestLoadProfilesWithTTLAndConfirm(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "profiles.yaml")
+	os.WriteFile(f, []byte(`
+profiles:
+  - name: prod-azure
+    provider: azure
+    confirm_on_use: true
+    ttl_days: 90
+    tags: [production, client]
+    azure:
+      tenant_id: "t-123"
+`), 0600)
+	profiles, err := LoadProfiles(f)
+	require.NoError(t, err)
+	require.Len(t, profiles, 1)
+	assert.True(t, profiles[0].ConfirmOnUse)
+	assert.Equal(t, 90, profiles[0].TTLDays)
+	assert.Contains(t, profiles[0].Tags, "production")
+}
+
 func TestLoadProfilesCustom(t *testing.T) {
 	f := filepath.Join(t.TempDir(), "profiles.yaml")
 	os.WriteFile(f, []byte(`

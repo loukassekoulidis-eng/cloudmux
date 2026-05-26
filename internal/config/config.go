@@ -70,14 +70,16 @@ type CustomConfig struct {
 }
 
 type Profile struct {
-	Name        string       `yaml:"name"`
-	Provider    string       `yaml:"provider"`
-	Description string       `yaml:"description"`
-	Tags        []string     `yaml:"tags"`
-	Azure       AzureConfig  `yaml:"azure"`
-	GCP         GCPConfig    `yaml:"gcp"`
-	AWS         AWSConfig    `yaml:"aws"`
-	Custom      CustomConfig `yaml:"custom"`
+	Name         string       `yaml:"name"`
+	Provider     string       `yaml:"provider"`
+	Description  string       `yaml:"description"`
+	Tags         []string     `yaml:"tags"`
+	ConfirmOnUse bool         `yaml:"confirm_on_use"`
+	TTLDays      int          `yaml:"ttl_days"`
+	Azure        AzureConfig  `yaml:"azure"`
+	GCP          GCPConfig    `yaml:"gcp"`
+	AWS          AWSConfig    `yaml:"aws"`
+	Custom       CustomConfig `yaml:"custom"`
 }
 
 type profilesFile struct {
