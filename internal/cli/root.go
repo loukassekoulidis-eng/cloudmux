@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/lukassekoulidis/cloudmux/internal/audit"
 	"github.com/lukassekoulidis/cloudmux/internal/provider"
 	paws "github.com/lukassekoulidis/cloudmux/internal/provider/aws"
 	"github.com/lukassekoulidis/cloudmux/internal/provider/azure"
@@ -25,7 +26,9 @@ func newRegistry() *provider.Registry {
 }
 
 func newManager() (*session.Manager, error) {
-	return session.NewManager(configDir, newRegistry())
+	auditPath := filepath.Join(configDir, "audit.log")
+	auditLogger := audit.New(auditPath)
+	return session.NewManager(configDir, newRegistry(), auditLogger)
 }
 
 func NewRootCmd() *cobra.Command {

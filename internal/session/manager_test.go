@@ -51,7 +51,7 @@ profiles:
 		status:  &provider.SessionStatus{Valid: true, Identity: "user@test.com", Tenant: "t-123"},
 	})
 
-	m, err := NewManager(baseDir, reg)
+	m, err := NewManager(baseDir, reg, nil)
 	require.NoError(t, err)
 	return m, baseDir
 }
@@ -81,4 +81,31 @@ func TestManagerStatus(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, status.Valid)
 	assert.Equal(t, "user@test.com", status.Identity)
+}
+
+func TestManagerLoginWritesTimestamp(t *testing.T) {
+	baseDir := t.TempDir()
+	os.Chmod(baseDir, 0700)
+
+	profilesPath := filepath.Join(baseDir, "profiles.yaml")
+	os.WriteFile(profilesPath, []byte(`
+profiles:
+  - name: test-profile
+    provider: mock
+    azure:
+      tenant_id: "t-123"
+`), 0600)
+
+	reg := provider.NewRegistry()
+	reg.Register(&mockProvider{
+		envVars: map[string]string{"MOCK_VAR": "/some/path"},
+	})
+
+	m, err := NewManager(baseDir, reg, nil)
+	require.NoError(t, err)
+	require.NoError(t, m.Login("test-profile"))
+
+	ts, err := m.LoginTimestamp("test-profile")
+	require.NoError(t, err)
+	assert.False(t, ts.IsZero())
 }
