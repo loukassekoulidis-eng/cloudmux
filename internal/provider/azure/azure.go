@@ -9,6 +9,7 @@ import (
 
 	"github.com/lukassekoulidis/cloudmux/internal/config"
 	"github.com/lukassekoulidis/cloudmux/internal/provider"
+	"github.com/lukassekoulidis/cloudmux/internal/security"
 )
 
 type Azure struct{}
@@ -40,7 +41,7 @@ func (a *Azure) Validate(profile config.Profile) error {
 
 func (a *Azure) Login(profile config.Profile, profileDir string) error {
 	azureDir := filepath.Join(profileDir, ".azure")
-	if err := os.MkdirAll(azureDir, 0700); err != nil {
+	if err := security.EnsureDir(azureDir); err != nil {
 		return fmt.Errorf("creating azure config dir: %w", err)
 	}
 

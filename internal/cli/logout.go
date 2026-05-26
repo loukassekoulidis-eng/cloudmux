@@ -16,13 +16,14 @@ func newLogoutCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if err := mgr.Logout(args[0]); err != nil {
+			result, err := mgr.Logout(args[0])
+			if err != nil {
 				return err
 			}
 			// Output unset statements — the shell hook evals these
-			fmt.Fprintln(cmd.OutOrStdout(), "unset CLOUDMUX_ACTIVE_PROFILE")
-			fmt.Fprintln(cmd.OutOrStdout(), "unset AZURE_CONFIG_DIR")
-			fmt.Fprintln(cmd.OutOrStdout(), "unset AZURE_DEFAULTS_LOCATION")
+			for _, k := range result.EnvKeys {
+				fmt.Fprintf(cmd.OutOrStdout(), "unset %s\n", k)
+			}
 			fmt.Fprintf(cmd.ErrOrStderr(), "✓ Logged out: %s\n", args[0])
 			return nil
 		},

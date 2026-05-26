@@ -100,18 +100,38 @@ func (m *Manager) Login(profileName string) error {
 	return prov.Login(profile, profDir)
 }
 
-func (m *Manager) Logout(profileName string) error {
+type LogoutResult struct {
+	EnvKeys []string
+}
+
+func (m *Manager) Logout(profileName string) (*LogoutResult, error) {
 	profile, err := m.findProfile(profileName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	prov, err := m.registry.Get(profile.Provider)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return prov.Logout(profile, m.profileDir(profileName))
+	// Get the env var keys this provider sets, so the caller can unset them
+	profDir := m.profileDir(profileName)
+	envs, err := prov.EnvVars(profile, profDir)
+	if err != nil {
+		return nil, err
+	}
+	keys := make([]string, 0, len(envs)+1)
+	keys = append(keys, "CLOUDMUX_ACTIVE_PROFILE")
+	for k := range envs {
+		keys = append(keys, k)
+	}
+
+	if err := prov.Logout(profile, profDir); err != nil {
+		return nil, err
+	}
+
+	return &LogoutResult{EnvKeys: keys}, nil
 }
 
 func (m *Manager) Status(profileName string) (*provider.SessionStatus, error) {

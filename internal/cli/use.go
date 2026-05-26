@@ -20,9 +20,10 @@ func newUseCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			// Output export statements — the shell hook evals these
+			// Output export statements — the shell hook evals these.
+			// Values must be single-quoted to prevent shell injection.
 			for k, v := range result.EnvVars {
-				fmt.Fprintf(cmd.OutOrStdout(), "export %s=%s\n", k, v)
+				fmt.Fprintf(cmd.OutOrStdout(), "export %s='%s'\n", k, v)
 			}
 			return nil
 		},

@@ -31,7 +31,11 @@ func NewRootCmd() *cobra.Command {
 		SilenceErrors: true,
 	}
 
-	defaultDir := filepath.Join(os.Getenv("HOME"), ".cloudmux")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = "."
+	}
+	defaultDir := filepath.Join(home, ".cloudmux")
 	root.PersistentFlags().StringVar(&configDir, "config-dir", defaultDir, "path to cloudmux config directory")
 
 	root.AddCommand(newInitCmd())
