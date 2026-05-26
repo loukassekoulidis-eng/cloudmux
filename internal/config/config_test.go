@@ -99,3 +99,67 @@ profiles:
 		require.Error(t, err)
 	})
 }
+
+func TestLoadProfilesGCP(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "profiles.yaml")
+	os.WriteFile(f, []byte(`
+profiles:
+  - name: my-gcp
+    provider: gcp
+    description: "GCP project"
+    gcp:
+      project_id: "my-project-123"
+      region: "europe-west3"
+      zone: "europe-west3-a"
+      use_named_config: false
+`), 0600)
+	profiles, err := LoadProfiles(f)
+	require.NoError(t, err)
+	require.Len(t, profiles, 1)
+	assert.Equal(t, "my-gcp", profiles[0].Name)
+	assert.Equal(t, "gcp", profiles[0].Provider)
+	assert.Equal(t, "my-project-123", profiles[0].GCP.ProjectID)
+	assert.Equal(t, "europe-west3", profiles[0].GCP.Region)
+	assert.Equal(t, "europe-west3-a", profiles[0].GCP.Zone)
+	assert.False(t, profiles[0].GCP.UseNamedConfig)
+}
+
+func TestLoadProfilesAWS(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "profiles.yaml")
+	os.WriteFile(f, []byte(`
+profiles:
+  - name: my-aws
+    provider: aws
+    aws:
+      profile_name: "prod-account"
+      region: "eu-central-1"
+      sso_start_url: "https://myorg.awsapps.com/start"
+`), 0600)
+	profiles, err := LoadProfiles(f)
+	require.NoError(t, err)
+	require.Len(t, profiles, 1)
+	assert.Equal(t, "prod-account", profiles[0].AWS.ProfileName)
+	assert.Equal(t, "eu-central-1", profiles[0].AWS.Region)
+	assert.Equal(t, "https://myorg.awsapps.com/start", profiles[0].AWS.SSOStartURL)
+}
+
+func TestLoadProfilesCustom(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "profiles.yaml")
+	os.WriteFile(f, []byte(`
+profiles:
+  - name: hetzner-prod
+    provider: custom
+    custom:
+      env:
+        HCLOUD_TOKEN_FILE: "{profile_dir}/token"
+      login_command: "hcloud context create {name}"
+      status_command: "hcloud server list --output noheader | head -1"
+      logout_command: "rm -f {profile_dir}/token"
+`), 0600)
+	profiles, err := LoadProfiles(f)
+	require.NoError(t, err)
+	require.Len(t, profiles, 1)
+	assert.Equal(t, "custom", profiles[0].Provider)
+	assert.Equal(t, "{profile_dir}/token", profiles[0].Custom.Env["HCLOUD_TOKEN_FILE"])
+	assert.Equal(t, "hcloud context create {name}", profiles[0].Custom.LoginCommand)
+}

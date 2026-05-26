@@ -49,12 +49,35 @@ type AzureConfig struct {
 	DefaultLocation string `yaml:"default_location"`
 }
 
+type GCPConfig struct {
+	ProjectID      string `yaml:"project_id"`
+	Region         string `yaml:"region"`
+	Zone           string `yaml:"zone"`
+	UseNamedConfig bool   `yaml:"use_named_config"`
+}
+
+type AWSConfig struct {
+	ProfileName string `yaml:"profile_name"`
+	Region      string `yaml:"region"`
+	SSOStartURL string `yaml:"sso_start_url"`
+}
+
+type CustomConfig struct {
+	Env           map[string]string `yaml:"env"`
+	LoginCommand  string            `yaml:"login_command"`
+	StatusCommand string            `yaml:"status_command"`
+	LogoutCommand string            `yaml:"logout_command"`
+}
+
 type Profile struct {
-	Name        string      `yaml:"name"`
-	Provider    string      `yaml:"provider"`
-	Description string      `yaml:"description"`
-	Tags        []string    `yaml:"tags"`
-	Azure       AzureConfig `yaml:"azure"`
+	Name        string       `yaml:"name"`
+	Provider    string       `yaml:"provider"`
+	Description string       `yaml:"description"`
+	Tags        []string     `yaml:"tags"`
+	Azure       AzureConfig  `yaml:"azure"`
+	GCP         GCPConfig    `yaml:"gcp"`
+	AWS         AWSConfig    `yaml:"aws"`
+	Custom      CustomConfig `yaml:"custom"`
 }
 
 type profilesFile struct {
