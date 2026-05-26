@@ -5,7 +5,10 @@ import (
 	"path/filepath"
 
 	"github.com/lukassekoulidis/cloudmux/internal/provider"
+	paws "github.com/lukassekoulidis/cloudmux/internal/provider/aws"
 	"github.com/lukassekoulidis/cloudmux/internal/provider/azure"
+	"github.com/lukassekoulidis/cloudmux/internal/provider/custom"
+	"github.com/lukassekoulidis/cloudmux/internal/provider/gcp"
 	"github.com/lukassekoulidis/cloudmux/internal/session"
 	"github.com/spf13/cobra"
 )
@@ -15,6 +18,9 @@ var configDir string
 func newRegistry() *provider.Registry {
 	reg := provider.NewRegistry()
 	reg.Register(azure.New())
+	reg.Register(gcp.New())
+	reg.Register(paws.New())
+	reg.Register(custom.New())
 	return reg
 }
 
