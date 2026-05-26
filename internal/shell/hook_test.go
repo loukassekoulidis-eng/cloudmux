@@ -32,3 +32,12 @@ func TestGenerateHook(t *testing.T) {
 		assert.Contains(t, err.Error(), "unsupported")
 	})
 }
+
+func TestGenerateHookFish(t *testing.T) {
+	out, err := GenerateHook("fish", "cloudmux")
+	require.NoError(t, err)
+	assert.Contains(t, out, "function cloudmux")
+	assert.Contains(t, out, "set -gx")
+	assert.Contains(t, out, "set -e")
+	assert.Contains(t, out, "CLOUDMUX_ACTIVE_PROFILE")
+}
