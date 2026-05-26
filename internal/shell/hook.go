@@ -27,15 +27,16 @@ cloudmux() {
     esac
 }
 
-# Prompt integration
-_cloudmux_prompt() {
-    if [ -n "${CLOUDMUX_ACTIVE_PROFILE:-}" ]; then
-        echo "[cloudmux: ${CLOUDMUX_ACTIVE_PROFILE}] "
+# Prompt integration (skipped if Starship is active — use a custom Starship module instead)
+if [ -z "${STARSHIP_SHELL:-}" ]; then
+    _cloudmux_prompt() {
+        if [ -n "${CLOUDMUX_ACTIVE_PROFILE:-}" ]; then
+            echo "[cloudmux: ${CLOUDMUX_ACTIVE_PROFILE}] "
+        fi
+    }
+    if [[ ! "$PS1" == *'_cloudmux_prompt'* ]]; then
+        PS1='$(_cloudmux_prompt)'"$PS1"
     fi
-}
-
-if [[ ! "$PS1" == *'_cloudmux_prompt'* ]]; then
-    PS1='$(_cloudmux_prompt)'"$PS1"
 fi
 `
 
@@ -60,15 +61,16 @@ cloudmux() {
     esac
 }
 
-# Prompt integration
-_cloudmux_prompt() {
-    if [[ -n "${CLOUDMUX_ACTIVE_PROFILE:-}" ]]; then
-        echo "[cloudmux: ${CLOUDMUX_ACTIVE_PROFILE}] "
+# Prompt integration (skipped if Starship is active — use a custom Starship module instead)
+if [[ -z "${STARSHIP_SHELL:-}" ]]; then
+    _cloudmux_prompt() {
+        if [[ -n "${CLOUDMUX_ACTIVE_PROFILE:-}" ]]; then
+            echo "[cloudmux: ${CLOUDMUX_ACTIVE_PROFILE}] "
+        fi
+    }
+    if [[ ! "$PROMPT" == *'_cloudmux_prompt'* ]]; then
+        PROMPT='$(_cloudmux_prompt)'"$PROMPT"
     fi
-}
-
-if [[ ! "$PROMPT" == *'_cloudmux_prompt'* ]]; then
-    PROMPT='$(_cloudmux_prompt)'"$PROMPT"
 fi
 `
 
