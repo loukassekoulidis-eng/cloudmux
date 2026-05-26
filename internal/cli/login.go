@@ -8,9 +8,10 @@ import (
 
 func newLoginCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "login <profile>",
-		Short: "Authenticate to a cloud profile",
-		Args:  cobra.ExactArgs(1),
+		Use:               "login <profile>",
+		Short:             "Authenticate to a cloud profile",
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: profileCompletionFunc,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			mgr, err := newManager()
 			if err != nil {

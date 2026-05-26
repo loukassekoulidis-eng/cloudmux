@@ -8,9 +8,10 @@ import (
 
 func newLogoutCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "logout <profile>",
-		Short: "Clear credentials for a profile",
-		Args:  cobra.ExactArgs(1),
+		Use:               "logout <profile>",
+		Short:             "Clear credentials for a profile",
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: profileCompletionFunc,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			mgr, err := newManager()
 			if err != nil {

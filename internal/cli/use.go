@@ -8,9 +8,10 @@ import (
 
 func newUseCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "use <profile>",
-		Short: "Activate a profile in the current shell",
-		Args:  cobra.ExactArgs(1),
+		Use:               "use <profile>",
+		Short:             "Activate a profile in the current shell",
+		Args:              cobra.ExactArgs(1),
+		ValidArgsFunction: profileCompletionFunc,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			mgr, err := newManager()
 			if err != nil {

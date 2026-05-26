@@ -9,9 +9,10 @@ import (
 
 func newStatusCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "status [profile]",
-		Short: "Show session status for a profile",
-		Args:  cobra.MaximumNArgs(1),
+		Use:               "status [profile]",
+		Short:             "Show session status for a profile",
+		Args:              cobra.MaximumNArgs(1),
+		ValidArgsFunction: profileCompletionFunc,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			mgr, err := newManager()
 			if err != nil {
