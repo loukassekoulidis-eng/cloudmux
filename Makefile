@@ -4,7 +4,7 @@ BUILD_DIR=bin
 .PHONY: build test test-verbose lint fmt vet clean
 
 build:
-	go build -o $(BUILD_DIR)/$(BINARY) ./cmd/cloudmux
+	CGO_ENABLED=0 go build -o $(BUILD_DIR)/$(BINARY) ./cmd/cloudmux
 
 test:
 	go test ./...
