@@ -209,6 +209,33 @@ func TestAppendProfile(t *testing.T) {
 	assert.Equal(t, "my-proj", profiles[1].GCP.ProjectID)
 }
 
+func TestLoadConfigTrayFields(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "config.yaml")
+	os.WriteFile(f, []byte(`
+tray_notifications: false
+tray_detection_interval_minutes: 10
+tray_expiry_check_interval_minutes: 3
+ignored_sessions:
+  - "azure:abc123"
+  - "gcp:def456"
+`), 0600)
+	cfg, err := LoadConfig(f)
+	require.NoError(t, err)
+	assert.False(t, cfg.TrayNotifications)
+	assert.Equal(t, 10, cfg.TrayDetectionIntervalMinutes)
+	assert.Equal(t, 3, cfg.TrayExpiryCheckIntervalMinutes)
+	assert.Len(t, cfg.IgnoredSessions, 2)
+}
+
+func TestLoadConfigTrayDefaults(t *testing.T) {
+	cfg, err := LoadConfig(filepath.Join(t.TempDir(), "nonexistent.yaml"))
+	require.NoError(t, err)
+	assert.True(t, cfg.TrayNotifications)
+	assert.Equal(t, 5, cfg.TrayDetectionIntervalMinutes)
+	assert.Equal(t, 2, cfg.TrayExpiryCheckIntervalMinutes)
+	assert.Empty(t, cfg.IgnoredSessions)
+}
+
 func TestAppendProfileDuplicate(t *testing.T) {
 	f := filepath.Join(t.TempDir(), "profiles.yaml")
 	os.WriteFile(f, []byte(`profiles:

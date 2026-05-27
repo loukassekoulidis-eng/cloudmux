@@ -14,7 +14,11 @@ type Config struct {
 	ExpiryWarningMinutes int    `yaml:"expiry_warning_minutes"`
 	ConfirmProduction    bool   `yaml:"confirm_production"`
 	DefaultTTLDays       int    `yaml:"default_ttl_days"`
-	EnforcePermissions   bool   `yaml:"enforce_permissions"`
+	EnforcePermissions              bool     `yaml:"enforce_permissions"`
+	TrayNotifications               bool     `yaml:"tray_notifications"`
+	TrayDetectionIntervalMinutes    int      `yaml:"tray_detection_interval_minutes"`
+	TrayExpiryCheckIntervalMinutes  int      `yaml:"tray_expiry_check_interval_minutes"`
+	IgnoredSessions                 []string `yaml:"ignored_sessions"`
 }
 
 func DefaultConfig() Config {
@@ -24,7 +28,10 @@ func DefaultConfig() Config {
 		ExpiryWarningMinutes: 15,
 		ConfirmProduction:    true,
 		DefaultTTLDays:       0,
-		EnforcePermissions:   true,
+		EnforcePermissions:             true,
+		TrayNotifications:              true,
+		TrayDetectionIntervalMinutes:   5,
+		TrayExpiryCheckIntervalMinutes: 2,
 	}
 }
 
