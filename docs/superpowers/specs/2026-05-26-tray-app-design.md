@@ -143,32 +143,41 @@ Priority: expired (red) > expiring (yellow) > new session (blue) > idle.
 
 ## Actions
 
-### Switch (copy command)
-Copies `cloudmux use <profile-name>` to the system clipboard. User pastes into terminal.
+Most actions run silently in the tray app's process. Only login/re-authenticate needs a terminal (OAuth browser flow requires user interaction).
 
-### Refresh Token / Re-authenticate
-Opens a new terminal window and runs `cloudmux login <profile>`. On macOS: `open -a Terminal "cloudmux login <name>"`. Cross-platform: use `exec.Command` with platform-appropriate terminal emulator.
+### Background actions (no terminal)
 
-### Import Sessions...
-Opens a new terminal window and runs `cloudmux import`.
+**Switch (copy command):** Copies `cloudmux use <profile-name>` to the system clipboard. User pastes into terminal.
 
-### Run Doctor
-Opens a new terminal window and runs `cloudmux doctor`.
+**Logout:** Runs `provider.Logout()` in background, removes profile directory, rebuilds menu. No user interaction needed.
 
-### Refresh All
-Re-runs the status check loop immediately (in background, rebuilds menu when done).
+**Remove Profile:** Deletes profile directory. Rebuilds menu.
 
-### Add detected session (name variant)
-Runs `cloudmux import --name <selected-name>` in background. On success, rebuilds menu. On failure (name collision), shows the profile with an error indicator.
+**Refresh All:** Re-runs `Status()` on all profiles in background. Updates dots and expiry times. Rebuilds menu.
 
-### Copy import command...
-Copies `cloudmux import --name ` (with trailing space) to clipboard. User pastes into terminal and types their custom name.
+**Add detected session (name variant):** Copies config directory (if needed) and appends to profiles.yaml via `config.AppendProfile()` — all in background. On success, rebuilds menu with new profile. On failure (name collision), shows error in a macOS notification.
 
-### Dismiss
-Removes detection from pending list. Stores session fingerprint (provider + tenant hash) in memory. Same session won't reappear until app restart.
+**Dismiss:** Removes detection from pending list. Stores session fingerprint (provider + tenant hash) in memory. Same session won't reappear until app restart.
 
-### Ignore this account
-Stores session fingerprint in `~/.cloudmux/config.yaml` under `ignored_sessions`. Persists across restarts.
+**Ignore this account:** Stores session fingerprint in `~/.cloudmux/config.yaml` under `ignored_sessions`. Persists across restarts.
+
+**Copy import command...:** Copies `cloudmux import --name ` (with trailing space) to clipboard. User pastes into terminal and types their custom name.
+
+### Terminal actions (needs user interaction)
+
+**Refresh Token / Re-authenticate:** Only action that opens a terminal. `az login` / `gcloud auth login` / `aws sso login` open a browser and may need stdin for device code flow. On macOS: `open -a Terminal.app /path/to/cloudmux login <name>`. After terminal closes, next status check cycle picks up the refreshed token.
+
+### Doctor (submenu results)
+
+**Run Doctor:** Runs doctor checks in background. Updates a "Doctor Results" submenu with the output:
+```
+Run Doctor                              ▸
+  Config directory: OK (0700)             (disabled)
+  Profiles: 4 loaded                      (disabled)
+  az: installed                           (disabled)
+  gcloud: not found                       (disabled)
+```
+Results persist in the submenu until next doctor run.
 
 ## Project Structure
 
