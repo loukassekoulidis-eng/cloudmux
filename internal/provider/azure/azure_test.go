@@ -69,3 +69,10 @@ func TestAzureName(t *testing.T) {
 	p := New()
 	assert.Equal(t, "azure", p.Name())
 }
+
+func TestSuggestName(t *testing.T) {
+	assert.Equal(t, "we-build-ai-azure", suggestName("we-build-ai.de"))
+	assert.Equal(t, "mycompany-azure", suggestName("mycompany.onmicrosoft.com"))
+	assert.Equal(t, "tenant-123-azure", suggestName("tenant-123"))
+	assert.Equal(t, "unknown-azure", suggestName(""))
+}

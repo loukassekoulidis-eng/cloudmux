@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/lukassekoulidis/cloudmux/internal/config"
 	"github.com/lukassekoulidis/cloudmux/internal/provider"
@@ -82,6 +83,70 @@ func (a *Azure) Logout(profile config.Profile, profileDir string) error {
 		return fmt.Errorf("removing azure config dir: %w", err)
 	}
 	return nil
+}
+
+func suggestName(tenantDomain string) string {
+	if tenantDomain == "" {
+		return "unknown-azure"
+	}
+	name := tenantDomain
+	name = strings.TrimSuffix(name, ".onmicrosoft.com")
+	name = strings.TrimSuffix(name, ".de")
+	name = strings.TrimSuffix(name, ".com")
+	name = strings.TrimSuffix(name, ".org")
+	name = strings.TrimSuffix(name, ".net")
+	name = strings.ReplaceAll(name, ".", "-")
+	return name + "-azure"
+}
+
+type azAccountShowFull struct {
+	User struct {
+		Name string `json:"name"`
+	} `json:"user"`
+	TenantID            string `json:"tenantId"`
+	ID                  string `json:"id"`
+	TenantDefaultDomain string `json:"tenantDefaultDomain"`
+}
+
+func (a *Azure) Detect() (*provider.ImportInfo, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := exec.Command("az", "account", "show", "--output", "json")
+	// Strip AZURE_CONFIG_DIR to use default ~/.azure
+	env := os.Environ()
+	filtered := make([]string, 0, len(env))
+	for _, e := range env {
+		if !strings.HasPrefix(e, "AZURE_CONFIG_DIR=") {
+			filtered = append(filtered, e)
+		}
+	}
+	cmd.Env = filtered
+
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, nil
+	}
+
+	var acct azAccountShowFull
+	if err := json.Unmarshal(out, &acct); err != nil {
+		return nil, nil
+	}
+
+	return &provider.ImportInfo{
+		SuggestedName: suggestName(acct.TenantDefaultDomain),
+		Profile: config.Profile{
+			Provider:    "azure",
+			Description: fmt.Sprintf("Imported from %s (%s)", acct.TenantDefaultDomain, acct.User.Name),
+			Azure: config.AzureConfig{
+				TenantID:       acct.TenantID,
+				SubscriptionID: acct.ID,
+			},
+		},
+		DefaultDir: filepath.Join(home, ".azure"),
+	}, nil
 }
 
 type azAccountShow struct {
