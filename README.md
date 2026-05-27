@@ -151,6 +151,19 @@ cloudmux probes Azure, GCP, and AWS for active sessions, creates profiles, and c
 | `cloudmux completion <shell>` | Generate shell completions |
 | `cloudmux shell-hook <shell>` | Generate shell hook for eval |
 
+## Menu Bar App
+
+cloudmux includes a menu bar tray app for macOS/Linux:
+
+```bash
+make build-tray
+./bin/cloudmux-tray
+```
+
+The tray icon sits in your menu bar and shows all profiles with live status. It automatically detects new cloud sessions (from `az login`, `gcloud auth login`, etc.) and offers to import them — no terminal needed. Token expiry warnings appear as OS notifications.
+
+Most actions run silently in the background. Only re-authentication opens a terminal (OAuth needs a browser).
+
 ## Custom providers
 
 For tools not natively supported, use the `custom` provider with user-defined commands:
