@@ -86,6 +86,27 @@ type profilesFile struct {
 	Profiles []Profile `yaml:"profiles"`
 }
 
+func AppendProfile(path string, profile Profile) error {
+	existing, err := LoadProfiles(path)
+	if err != nil {
+		return err
+	}
+
+	for _, p := range existing {
+		if p.Name == profile.Name {
+			return fmt.Errorf("profile %q already exists", profile.Name)
+		}
+	}
+
+	pf := profilesFile{Profiles: append(existing, profile)}
+	data, err := yaml.Marshal(&pf)
+	if err != nil {
+		return fmt.Errorf("marshaling profiles: %w", err)
+	}
+
+	return os.WriteFile(path, data, 0600)
+}
+
 func LoadProfiles(path string) ([]Profile, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {

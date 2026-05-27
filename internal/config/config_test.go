@@ -183,3 +183,47 @@ profiles:
 	assert.Equal(t, "{profile_dir}/token", profiles[0].Custom.Env["HCLOUD_TOKEN_FILE"])
 	assert.Equal(t, "hcloud context create {name}", profiles[0].Custom.LoginCommand)
 }
+
+func TestAppendProfile(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "profiles.yaml")
+	os.WriteFile(f, []byte(`profiles:
+  - name: existing
+    provider: azure
+    azure:
+      tenant_id: "t-123"
+`), 0600)
+
+	newProfile := Profile{
+		Name:     "imported",
+		Provider: "gcp",
+		GCP:      GCPConfig{ProjectID: "my-proj"},
+	}
+
+	require.NoError(t, AppendProfile(f, newProfile))
+
+	profiles, err := LoadProfiles(f)
+	require.NoError(t, err)
+	require.Len(t, profiles, 2)
+	assert.Equal(t, "existing", profiles[0].Name)
+	assert.Equal(t, "imported", profiles[1].Name)
+	assert.Equal(t, "my-proj", profiles[1].GCP.ProjectID)
+}
+
+func TestAppendProfileDuplicate(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "profiles.yaml")
+	os.WriteFile(f, []byte(`profiles:
+  - name: existing
+    provider: azure
+    azure:
+      tenant_id: "t-123"
+`), 0600)
+
+	newProfile := Profile{
+		Name:     "existing",
+		Provider: "gcp",
+	}
+
+	err := AppendProfile(f, newProfile)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "already exists")
+}
