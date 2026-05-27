@@ -90,6 +90,10 @@ func (c *Custom) Logout(profile config.Profile, profileDir string) error {
 	return nil
 }
 
+func (c *Custom) Detect() (*provider.ImportInfo, error) {
+	return nil, nil
+}
+
 func (c *Custom) Status(profile config.Profile, profileDir string) (*provider.SessionStatus, error) {
 	if profile.Custom.StatusCommand == "" {
 		return &provider.SessionStatus{Valid: false}, nil

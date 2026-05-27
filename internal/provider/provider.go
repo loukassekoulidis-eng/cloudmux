@@ -15,6 +15,12 @@ type SessionStatus struct {
 	Region    string
 }
 
+type ImportInfo struct {
+	SuggestedName string
+	Profile       config.Profile
+	DefaultDir    string // source config dir to copy (empty = no copy needed)
+}
+
 type Provider interface {
 	Name() string
 	EnvVars(profile config.Profile, profileDir string) (map[string]string, error)
@@ -22,6 +28,7 @@ type Provider interface {
 	Logout(profile config.Profile, profileDir string) error
 	Status(profile config.Profile, profileDir string) (*SessionStatus, error)
 	Validate(profile config.Profile) error
+	Detect() (*ImportInfo, error)
 }
 
 type Registry struct {
@@ -42,4 +49,12 @@ func (r *Registry) Get(name string) (Provider, error) {
 		return nil, fmt.Errorf("unknown provider %q", name)
 	}
 	return p, nil
+}
+
+func (r *Registry) All() []Provider {
+	providers := make([]Provider, 0, len(r.providers))
+	for _, p := range r.providers {
+		providers = append(providers, p)
+	}
+	return providers
 }
