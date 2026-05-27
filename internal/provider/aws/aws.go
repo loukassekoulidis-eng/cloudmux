@@ -70,6 +70,51 @@ type stsIdentity struct {
 	UserID  string `json:"UserId"`
 }
 
+func suggestName(profileName string, accountID string) string {
+	if profileName != "" {
+		return profileName + "-aws"
+	}
+	if accountID != "" {
+		return accountID + "-aws"
+	}
+	return "unknown-aws"
+}
+
+func (a *AWS) Detect() (*provider.ImportInfo, error) {
+	cmd := exec.Command("aws", "sts", "get-caller-identity", "--output", "json")
+
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, nil
+	}
+
+	var identity stsIdentity
+	if err := json.Unmarshal(out, &identity); err != nil {
+		return nil, nil
+	}
+
+	currentProfile := os.Getenv("AWS_PROFILE")
+	profileName := currentProfile
+	if profileName == "" {
+		profileName = "default"
+	}
+
+	region := os.Getenv("AWS_DEFAULT_REGION")
+
+	return &provider.ImportInfo{
+		SuggestedName: suggestName(currentProfile, identity.Account),
+		Profile: config.Profile{
+			Provider:    "aws",
+			Description: fmt.Sprintf("Imported from %s (%s)", identity.Account, identity.Arn),
+			AWS: config.AWSConfig{
+				ProfileName: profileName,
+				Region:      region,
+			},
+		},
+		DefaultDir: "",
+	}, nil
+}
+
 func (a *AWS) Status(profile config.Profile, profileDir string) (*provider.SessionStatus, error) {
 	cmd := exec.Command("aws", "sts", "get-caller-identity", "--profile", profile.AWS.ProfileName, "--output", "json")
 

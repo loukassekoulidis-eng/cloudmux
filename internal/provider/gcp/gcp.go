@@ -95,6 +95,56 @@ func (g *GCP) Logout(profile config.Profile, profileDir string) error {
 	return nil
 }
 
+func suggestName(projectID string) string {
+	if projectID == "" {
+		return "unknown-gcp"
+	}
+	return projectID + "-gcp"
+}
+
+func (g *GCP) Detect() (*provider.ImportInfo, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+
+	projCmd := exec.Command("gcloud", "config", "get", "project")
+	env := os.Environ()
+	filtered := make([]string, 0, len(env))
+	for _, e := range env {
+		if !strings.HasPrefix(e, "CLOUDSDK_CONFIG=") && !strings.HasPrefix(e, "CLOUDSDK_ACTIVE_CONFIG_NAME=") {
+			filtered = append(filtered, e)
+		}
+	}
+	projCmd.Env = filtered
+	projOut, err := projCmd.Output()
+	if err != nil {
+		return nil, nil
+	}
+	projectID := strings.TrimSpace(string(projOut))
+
+	acctCmd := exec.Command("gcloud", "config", "get", "account")
+	acctCmd.Env = filtered
+	acctOut, _ := acctCmd.Output()
+	account := strings.TrimSpace(string(acctOut))
+
+	if projectID == "" {
+		return nil, nil
+	}
+
+	return &provider.ImportInfo{
+		SuggestedName: suggestName(projectID),
+		Profile: config.Profile{
+			Provider:    "gcp",
+			Description: fmt.Sprintf("Imported from %s (%s)", projectID, account),
+			GCP: config.GCPConfig{
+				ProjectID: projectID,
+			},
+		},
+		DefaultDir: filepath.Join(home, ".config", "gcloud"),
+	}, nil
+}
+
 func (g *GCP) Status(profile config.Profile, profileDir string) (*provider.SessionStatus, error) {
 	gcpDir := filepath.Join(profileDir, ".config", "gcloud")
 

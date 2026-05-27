@@ -73,6 +73,11 @@ func TestGCPEnvVarsMinimal(t *testing.T) {
 	assert.False(t, hasZone)
 }
 
+func TestGCPSuggestName(t *testing.T) {
+	assert.Equal(t, "my-project-gcp", suggestName("my-project"))
+	assert.Equal(t, "unknown-gcp", suggestName(""))
+}
+
 func TestGCPValidate(t *testing.T) {
 	p := New()
 

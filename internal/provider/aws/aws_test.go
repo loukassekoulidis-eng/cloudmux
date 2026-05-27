@@ -47,6 +47,12 @@ func TestAWSEnvVarsNoRegion(t *testing.T) {
 	assert.False(t, hasRegion)
 }
 
+func TestAWSSuggestName(t *testing.T) {
+	assert.Equal(t, "prod-aws", suggestName("prod", ""))
+	assert.Equal(t, "123456789-aws", suggestName("", "123456789"))
+	assert.Equal(t, "unknown-aws", suggestName("", ""))
+}
+
 func TestAWSValidate(t *testing.T) {
 	p := New()
 
