@@ -1,7 +1,6 @@
 package tray
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -62,28 +61,20 @@ func NewApp(configDir string, registry *provider.Registry, cfg config.Config, au
 // OnReady is the systray onReady callback. It sets the initial icon,
 // loads profiles and statuses, builds the menu, and starts background loops.
 func (a *App) OnReady() {
-	log.Println("OnReady: setting up")
-	systray.SetTitle("MUX")
+	systray.SetTitle("CMUX")
 	systray.SetTooltip("cloudmux")
 
-	// Load profiles synchronously so we can build menu on the main thread
 	a.refreshProfiles()
-
-	// Build menu on main thread (required by macOS Cocoa)
 	a.buildMenu()
 
-	// Background: status checks and detection loops
 	go func() {
 		a.refreshStatuses()
-		// Update menu titles after status check
 		a.updateMenuTitles()
 		a.updateIcon()
 
 		go a.detectionLoop()
 		go a.expiryLoop()
 	}()
-
-	log.Println("OnReady: done")
 }
 
 // OnExit is the systray onExit callback.

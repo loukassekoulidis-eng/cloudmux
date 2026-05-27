@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 
@@ -38,10 +37,5 @@ func main() {
 	app.IconYellow = iconYellow
 	app.IconRed = iconRed
 
-	log.Println("starting cloudmux tray...")
-	systray.Run(app.OnReady, func() {
-		log.Println("tray exiting")
-		app.OnExit()
-	})
-	log.Println("systray.Run returned")
+	systray.Run(app.OnReady, app.OnExit)
 }
