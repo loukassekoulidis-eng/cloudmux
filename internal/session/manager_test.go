@@ -30,6 +30,7 @@ func (m *mockProvider) Status(_ config.Profile, _ string) (*provider.SessionStat
 	return m.status, m.statusErr
 }
 func (m *mockProvider) Validate(_ config.Profile) error { return m.validateErr }
+func (m *mockProvider) Detect() (*provider.ImportInfo, error) { return nil, nil }
 
 func setupTestManager(t *testing.T) (*Manager, string) {
 	t.Helper()
