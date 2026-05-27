@@ -73,13 +73,15 @@ func newGCCmd() *cobra.Command {
 			}
 
 			if !force {
-				fmt.Fprintf(out, "\n%d stale profile(s). Run with --force to remove their data directories.\n", len(stale))
+				fmt.Fprintf(out, "\n%d stale profile(s). Run with --force to remove them.\n", len(stale))
 				return nil
 			}
 
+			profilesPath := filepath.Join(configDir, "profiles.yaml")
 			for _, name := range stale {
 				profDir := mgr.ProfileDir(name)
-				if err := os.RemoveAll(profDir); err != nil {
+				os.RemoveAll(profDir)
+				if err := config.RemoveProfile(profilesPath, name); err != nil {
 					fmt.Fprintf(out, "  ✗ Failed to remove %s: %s\n", name, err)
 				} else {
 					fmt.Fprintf(out, "  ✓ Removed %s\n", name)
@@ -90,7 +92,7 @@ func newGCCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVar(&force, "force", false, "actually remove stale profile directories")
+	cmd.Flags().BoolVar(&force, "force", false, "remove stale profiles and their data")
 	return cmd
 }
 

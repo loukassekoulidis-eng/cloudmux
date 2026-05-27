@@ -114,6 +114,35 @@ func AppendProfile(path string, profile Profile) error {
 	return os.WriteFile(path, data, 0600)
 }
 
+func RemoveProfile(path string, name string) error {
+	existing, err := LoadProfiles(path)
+	if err != nil {
+		return err
+	}
+
+	var kept []Profile
+	found := false
+	for _, p := range existing {
+		if p.Name == name {
+			found = true
+			continue
+		}
+		kept = append(kept, p)
+	}
+
+	if !found {
+		return fmt.Errorf("profile %q not found", name)
+	}
+
+	pf := profilesFile{Profiles: kept}
+	data, err := yaml.Marshal(&pf)
+	if err != nil {
+		return fmt.Errorf("marshaling profiles: %w", err)
+	}
+
+	return os.WriteFile(path, data, 0600)
+}
+
 func LoadProfiles(path string) ([]Profile, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
