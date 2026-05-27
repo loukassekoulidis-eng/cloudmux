@@ -59,7 +59,7 @@ func (a *App) OnReady() {
 	systray.SetTitle("MUX")
 	systray.SetTooltip("cloudmux")
 	if a.IconIdle != nil {
-		systray.SetIcon(a.IconIdle)
+		systray.SetTemplateIcon(a.IconIdle, a.IconIdle)
 	}
 
 	a.refreshProfiles()
@@ -174,19 +174,19 @@ func (a *App) updateIcon() {
 	switch state {
 	case IconBlue:
 		if a.IconBlue != nil {
-			systray.SetIcon(a.IconBlue)
+			systray.SetTemplateIcon(a.IconBlue, a.IconBlue)
 		}
 	case IconYellow:
 		if a.IconYellow != nil {
-			systray.SetIcon(a.IconYellow)
+			systray.SetTemplateIcon(a.IconYellow, a.IconYellow)
 		}
 	case IconRed:
 		if a.IconRed != nil {
-			systray.SetIcon(a.IconRed)
+			systray.SetTemplateIcon(a.IconRed, a.IconRed)
 		}
 	default:
 		if a.IconIdle != nil {
-			systray.SetIcon(a.IconIdle)
+			systray.SetTemplateIcon(a.IconIdle, a.IconIdle)
 		}
 	}
 }

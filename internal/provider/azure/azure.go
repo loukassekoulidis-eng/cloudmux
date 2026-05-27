@@ -115,7 +115,7 @@ func (a *Azure) Detect() (*provider.ImportInfo, error) {
 	}
 
 	cmd := exec.Command("az", "account", "show", "--output", "json")
-	// Strip AZURE_CONFIG_DIR to use default ~/.azure
+	// Strip AZURE_CONFIG_DIR to use default ~/.azure, and disable interactive login
 	env := os.Environ()
 	filtered := make([]string, 0, len(env))
 	for _, e := range env {
@@ -123,6 +123,7 @@ func (a *Azure) Detect() (*provider.ImportInfo, error) {
 			filtered = append(filtered, e)
 		}
 	}
+	filtered = append(filtered, "AZURE_CORE_NO_PROMPT=true")
 	cmd.Env = filtered
 
 	out, err := cmd.Output()
@@ -162,7 +163,7 @@ func (a *Azure) Status(profile config.Profile, profileDir string) (*provider.Ses
 	azureDir := filepath.Join(profileDir, ".azure")
 
 	cmd := exec.Command("az", "account", "show", "--output", "json")
-	cmd.Env = append(os.Environ(), "AZURE_CONFIG_DIR="+azureDir)
+	cmd.Env = append(os.Environ(), "AZURE_CONFIG_DIR="+azureDir, "AZURE_CORE_NO_PROMPT=true")
 
 	out, err := cmd.Output()
 	if err != nil {
