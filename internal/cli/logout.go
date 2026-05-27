@@ -10,7 +10,12 @@ func newLogoutCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:               "logout <profile>",
 		Short:             "Clear credentials for a profile",
-		Args:              cobra.ExactArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return fmt.Errorf("missing profile name\n\nUsage: cloudmux logout <profile>\n\nRun 'cloudmux list' to see available profiles")
+			}
+			return cobra.ExactArgs(1)(cmd, args)
+		},
 		ValidArgsFunction: profileCompletionFunc,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			mgr, err := newManager()

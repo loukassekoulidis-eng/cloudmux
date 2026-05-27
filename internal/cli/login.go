@@ -10,7 +10,12 @@ func newLoginCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:               "login <profile>",
 		Short:             "Authenticate to a cloud profile",
-		Args:              cobra.ExactArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return fmt.Errorf("missing profile name\n\nUsage: cloudmux login <profile>\n\nRun 'cloudmux list' to see available profiles")
+			}
+			return cobra.ExactArgs(1)(cmd, args)
+		},
 		ValidArgsFunction: profileCompletionFunc,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			mgr, err := newManager()

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -15,7 +16,12 @@ func newCompletionCmd() *cobra.Command {
   bash:  source <(cloudmux completion bash)
   zsh:   source <(cloudmux completion zsh)
   fish:  cloudmux completion fish | source`,
-		Args:      cobra.ExactArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return fmt.Errorf("missing shell type\n\nUsage: cloudmux completion <bash|zsh|fish>\n\nExample:\n  source <(cloudmux completion zsh)")
+			}
+			return cobra.ExactArgs(1)(cmd, args)
+		},
 		ValidArgs: []string{"bash", "zsh", "fish"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			switch args[0] {

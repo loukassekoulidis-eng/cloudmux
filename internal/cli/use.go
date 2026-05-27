@@ -17,7 +17,12 @@ func newUseCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:               "use <profile>",
 		Short:             "Activate a profile in the current shell",
-		Args:              cobra.ExactArgs(1),
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return fmt.Errorf("missing profile name\n\nUsage: cloudmux use <profile>\n\nRun 'cloudmux list' to see available profiles")
+			}
+			return cobra.ExactArgs(1)(cmd, args)
+		},
 		ValidArgsFunction: profileCompletionFunc,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			mgr, err := newManager()
