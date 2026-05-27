@@ -6,15 +6,15 @@ Stop re-authenticating every time you switch between cloud tenants. cloudmux let
 
 ```bash
 # Login once (opens browser)
-cloudmux login wbai-azure
+cloudmux login acme-azure
 
 # Switch instantly in any terminal — no browser, no waiting
-cloudmux use wbai-azure
-az group list  # uses WBAI credentials
+cloudmux use acme-azure
+az group list  # uses Acme credentials
 
 # In another terminal, different tenant — simultaneously
-cloudmux use driventic-azure
-az group list  # uses Driventic credentials
+cloudmux use contoso-azure
+az group list  # uses Contoso credentials
 ```
 
 Built for consultants, platform engineers, and anyone who juggles multiple cloud accounts daily.
@@ -37,7 +37,7 @@ Each terminal points to a different isolated directory. No credential conflicts,
 ### From source
 
 ```bash
-go install github.com/lukassekoulidis/cloudmux/cmd/cloudmux@latest
+go install github.com/loukassekoulidis-eng/cloudmux/cmd/cloudmux@latest
 ```
 
 ### Build locally
@@ -91,12 +91,12 @@ Add your profiles:
 
 ```yaml
 profiles:
-  - name: wbai-azure
+  - name: acme-azure
     provider: azure
-    description: "WE BUILD AI tenant"
+    description: "Acme Corp Azure tenant"
     azure:
-      tenant_id: "84e19cd6-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-      subscription_id: "b222ede5-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      tenant_id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      subscription_id: "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
       default_location: "westeurope"
 
   - name: my-gcp
@@ -118,8 +118,8 @@ profiles:
 Then:
 
 ```bash
-cloudmux login wbai-azure    # authenticate once (opens browser)
-cloudmux use wbai-azure      # activate in current terminal (instant)
+cloudmux login acme-azure    # authenticate once (opens browser)
+cloudmux use acme-azure      # activate in current terminal (instant)
 cloudmux status              # verify session
 cloudmux list                # see all profiles + status
 ```

@@ -1350,7 +1350,7 @@ make build
 ./bin/cloudmux completion zsh | head -3
 ./bin/cloudmux completion fish | head -3
 
-# List (should show existing wbai-azure)
+# List (should show existing acme-azure)
 ./bin/cloudmux list
 
 # Help (should show all commands including doctor, completion)

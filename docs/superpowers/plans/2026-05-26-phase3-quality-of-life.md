@@ -863,7 +863,7 @@ make build
 ./bin/cloudmux gc
 ```
 
-Expected: shows profile status. wbai-azure should show as ok if session is valid.
+Expected: shows profile status. acme-azure should show as ok if session is valid.
 
 - [ ] **Step 4: Commit**
 
@@ -1000,7 +1000,7 @@ func newUseCmd() *cobra.Command {
 
 ```bash
 make build
-./bin/cloudmux use wbai-azure
+./bin/cloudmux use acme-azure
 ```
 
 Expected: works as before, no warnings (TTL not set, token not near expiry).
@@ -1243,7 +1243,7 @@ func joinNames(names []string) string {
 ```bash
 make build
 ./bin/cloudmux list
-./bin/cloudmux status wbai-azure
+./bin/cloudmux status acme-azure
 ./bin/cloudmux doctor
 ```
 
@@ -1293,10 +1293,10 @@ make build
 ./bin/cloudmux list
 
 # Status with color
-./bin/cloudmux status wbai-azure
+./bin/cloudmux status acme-azure
 
 # Use (should work, no TTL/confirm warnings)
-./bin/cloudmux use wbai-azure
+./bin/cloudmux use acme-azure
 
 # Help shows gc
 ./bin/cloudmux --help | grep gc

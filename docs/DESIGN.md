@@ -64,25 +64,25 @@ cloudmux creates isolated directories per profile under `~/.cloudmux/profiles/<n
 ### Lifecycle
 
 ```
-1. cloudmux login driventic-azure
-   → Sets AZURE_CONFIG_DIR=~/.cloudmux/profiles/driventic-azure/.azure
+1. cloudmux login contoso-azure
+   → Sets AZURE_CONFIG_DIR=~/.cloudmux/profiles/contoso-azure/.azure
    → Runs `az login --tenant <tenant-id>` (browser opens ONCE)
    → Token is cached in the isolated directory
 
-2. cloudmux use driventic-azure
+2. cloudmux use contoso-azure
    → Sets AZURE_CONFIG_DIR in current shell (no browser, instant)
-   → All subsequent `az` commands use driventic credentials
+   → All subsequent `az` commands use contoso credentials
 
 3. [In another terminal]
-   cloudmux use wbai-azure
+   cloudmux use acme-azure
    → Sets AZURE_CONFIG_DIR to a different isolated directory
-   → This terminal uses WBAI credentials, the other still uses Driventic
+   → This terminal uses Acme credentials, the other still uses Contoso
 
 4. cloudmux status
    → Shows active profile, tenant, token expiry
    → Calls real API to verify (not just cache)
 
-5. cloudmux logout driventic-azure
+5. cloudmux logout contoso-azure
    → Runs `az logout` with the isolated config dir
    → Wipes the token cache for that profile
 ```
@@ -293,27 +293,27 @@ The shell hook:
 ```bash
 $ cloudmux list
   NAME               PROVIDER   STATUS     TENANT/PROJECT
-  driventic-azure    azure      ✓ valid    driventic.onmicrosoft.com (expires in 47m)
-  wbai-azure         azure      ✗ expired  webuildai.onmicrosoft.com
-  wbai-gcp           gcp        ✓ valid    we-build-ai-prod (expires in 3h)
-  bauking-azure      azure      ○ unknown  (never logged in)
+  contoso-azure      azure      ✓ valid    contoso.onmicrosoft.com (expires in 47m)
+  acme-azure         azure      ✗ expired  acmecorp.onmicrosoft.com
+  acme-gcp           gcp        ✓ valid    acme-prod (expires in 3h)
+  northwind-azure    azure      ○ unknown  (never logged in)
 
-$ cloudmux use driventic-azure
-✓ Activated: driventic-azure (Azure, driventic.onmicrosoft.com)
+$ cloudmux use contoso-azure
+✓ Activated: contoso-azure (Azure, contoso.onmicrosoft.com)
 
-[cloudmux: driventic-azure] $ az group list --output table
+[cloudmux: contoso-azure] $ az group list --output table
 Name            Location
 -----------     ----------
 rg-production   westeurope
 rg-staging      westeurope
 
 # In another tmux pane:
-$ cloudmux use wbai-gcp
-✓ Activated: wbai-gcp (GCP, we-build-ai-prod)
+$ cloudmux use acme-gcp
+✓ Activated: acme-gcp (GCP, acme-prod)
 
-[cloudmux: wbai-gcp] $ gcloud compute instances list
-NAME        ZONE             MACHINE_TYPE  STATUS
-matchday-1  europe-west3-a   e2-standard-4 RUNNING
+[cloudmux: acme-gcp] $ gcloud compute instances list
+NAME          ZONE             MACHINE_TYPE  STATUS
+app-server-1  europe-west3-a   e2-standard-4 RUNNING
 ```
 
 ---
@@ -352,9 +352,9 @@ enforce_permissions: true
 ```yaml
 profiles:
   # --- Azure profiles ---
-  - name: driventic-azure
+  - name: contoso-azure
     provider: azure
-    description: "Driventic client tenant"
+    description: "Contoso client tenant"
     azure:
       tenant_id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
       subscription_id: "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy"
@@ -363,9 +363,9 @@ profiles:
     confirm_on_use: true     # requires explicit confirmation
     ttl_days: 90             # expires 90 days after creation
 
-  - name: wbai-azure
+  - name: acme-azure
     provider: azure
-    description: "WE BUILD AI internal tenant"
+    description: "Acme Corp internal tenant"
     azure:
       tenant_id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
       subscription_id: "zzzzzzzz-zzzz-zzzz-zzzz-zzzzzzzzzzzz"
@@ -373,11 +373,11 @@ profiles:
     tags: [internal]
 
   # --- GCP profiles ---
-  - name: wbai-gcp
+  - name: acme-gcp
     provider: gcp
-    description: "WE BUILD AI GCP project"
+    description: "Acme Corp GCP project"
     gcp:
-      project_id: "we-build-ai-prod"
+      project_id: "acme-prod"
       region: "europe-west3"
       zone: "europe-west3-a"
       use_named_config: false  # if true, uses CLOUDSDK_ACTIVE_CONFIG_NAME instead of CLOUDSDK_CONFIG
@@ -519,7 +519,7 @@ Operating on the wrong tenant is a significant operational risk:
 #### 6. Audit trail (recommended)
 
 - `~/.cloudmux/audit.log` records login, use, logout, gc events with timestamps
-- Log format: `2026-05-26T14:30:00Z LOGIN driventic-azure azure driventic.onmicrosoft.com`
+- Log format: `2026-05-26T14:30:00Z LOGIN contoso-azure azure contoso.onmicrosoft.com`
 - Permissions: `0600`
 - Rotation: keep last 10,000 lines or 1MB, whichever is smaller
 

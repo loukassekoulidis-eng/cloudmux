@@ -98,8 +98,8 @@ Example output:
 ✓ Profiles: 4 profiles loaded
 
 Provider CLIs:
-  ✓ az      (azure profiles: wbai-azure, driventic-azure)
-  ✗ gcloud  (gcp profiles: wbai-gcp) — install: https://cloud.google.com/sdk/docs/install
+  ✓ az      (azure profiles: acme-azure, contoso-azure)
+  ✗ gcloud  (gcp profiles: acme-gcp) — install: https://cloud.google.com/sdk/docs/install
   ✓ aws     (aws profiles: analytics-aws)
 ```
 

@@ -91,10 +91,10 @@ func suggestName(tenantDomain string) string {
 	}
 	name := tenantDomain
 	name = strings.TrimSuffix(name, ".onmicrosoft.com")
-	name = strings.TrimSuffix(name, ".de")
-	name = strings.TrimSuffix(name, ".com")
-	name = strings.TrimSuffix(name, ".org")
-	name = strings.TrimSuffix(name, ".net")
+	// Strip common TLDs
+	for _, tld := range []string{".com", ".org", ".net", ".io", ".de", ".co.uk"} {
+		name = strings.TrimSuffix(name, tld)
+	}
 	name = strings.ReplaceAll(name, ".", "-")
 	return name + "-azure"
 }

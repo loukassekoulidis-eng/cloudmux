@@ -19,7 +19,7 @@ Add one new method to the `Provider` interface:
 
 ```go
 type ImportInfo struct {
-    SuggestedName string            // e.g. "webuildai-azure" derived from tenant domain
+    SuggestedName string            // e.g. "acmecorp-azure" derived from tenant domain
     ProfileConfig map[string]string // provider-specific config to populate the Profile struct
     DefaultDir    string            // e.g. "~/.azure" — the source directory to copy
 }
@@ -34,7 +34,7 @@ Each provider implements `Detect()`:
 ### Azure
 - Runs `az account show --output json` (with NO `AZURE_CONFIG_DIR` override — uses default `~/.azure/`)
 - Parses tenant ID, subscription ID, user, tenant default domain
-- Suggested name: lowercase tenant domain sans `.onmicrosoft.com` + `-azure` (e.g. `we-build-ai-azure`)
+- Suggested name: lowercase tenant domain sans `.onmicrosoft.com` + `-azure` (e.g. `acme-corp-azure`)
 - ProfileConfig: `tenant_id`, `subscription_id`
 - DefaultDir: `~/.azure`
 

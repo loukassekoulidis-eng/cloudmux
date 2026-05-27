@@ -280,7 +280,7 @@ Add to `internal/provider/azure/azure_test.go`:
 
 ```go
 func TestSuggestName(t *testing.T) {
-	assert.Equal(t, "we-build-ai-azure", suggestName("we-build-ai.de"))
+	assert.Equal(t, "acme-corp-azure", suggestName("acme-corp.example.com"))
 	assert.Equal(t, "mycompany-azure", suggestName("mycompany.onmicrosoft.com"))
 	assert.Equal(t, "tenant-123-azure", suggestName("tenant-123"))
 	assert.Equal(t, "unknown-azure", suggestName(""))
@@ -853,7 +853,7 @@ make build
 ./bin/cloudmux import
 ```
 
-Expected: detects active Azure session (wbai-azure is logged in), but may fail because profile name already exists. That's correct behavior — import is for new profiles.
+Expected: detects active Azure session (acme-azure is logged in), but may fail because profile name already exists. That's correct behavior — import is for new profiles.
 
 - [ ] **Step 3: Add import to README**
 
