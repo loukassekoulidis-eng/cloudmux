@@ -124,6 +124,17 @@ cloudmux status              # verify session
 cloudmux list                # see all profiles + status
 ```
 
+## Import existing sessions
+
+Already logged in? Import your active sessions directly:
+
+```bash
+cloudmux import                    # auto-detect all active cloud sessions
+cloudmux import --name my-tenant   # override the generated profile name
+```
+
+cloudmux probes Azure, GCP, and AWS for active sessions, creates profiles, and copies credentials into isolated directories — no re-authentication needed.
+
 ## Commands
 
 | Command | Description |
@@ -136,6 +147,7 @@ cloudmux list                # see all profiles + status
 | `cloudmux logout <profile>` | Clear credentials for a profile |
 | `cloudmux gc` | Find and clean up stale/expired profiles |
 | `cloudmux doctor` | Check prerequisites (CLIs installed, config health) |
+| `cloudmux import` | Detect and import active cloud sessions |
 | `cloudmux completion <shell>` | Generate shell completions |
 | `cloudmux shell-hook <shell>` | Generate shell hook for eval |
 
