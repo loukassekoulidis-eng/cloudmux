@@ -56,6 +56,7 @@ func NewRootCmd() *cobra.Command {
 	root.AddCommand(newLogoutCmd())
 	root.AddCommand(newDoctorCmd())
 	root.AddCommand(newCompletionCmd())
+	root.AddCommand(newGCCmd())
 
 	return root
 }
