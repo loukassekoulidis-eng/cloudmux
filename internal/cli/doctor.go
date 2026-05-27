@@ -2,12 +2,15 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 
+	"github.com/lukassekoulidis/cloudmux/internal/color"
 	"github.com/lukassekoulidis/cloudmux/internal/config"
 	"github.com/lukassekoulidis/cloudmux/internal/security"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var providerCLIs = map[string]struct {
@@ -26,24 +29,22 @@ func newDoctorCmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			out := cmd.OutOrStdout()
+			c := color.New(term.IsTerminal(int(os.Stdout.Fd())))
 
-			// Check config directory
 			if err := security.EnforcePermissions(configDir, true); err != nil {
-				fmt.Fprintf(out, "✗ Config directory: %s\n  %s\n", configDir, err)
+				fmt.Fprintf(out, "%s Config directory: %s\n  %s\n", c.Red("✗"), configDir, err)
 			} else {
-				fmt.Fprintf(out, "✓ Config directory: %s (0700)\n", configDir)
+				fmt.Fprintf(out, "%s Config directory: %s (0700)\n", c.Green("✓"), configDir)
 			}
 
-			// Load profiles
 			profilesPath := filepath.Join(configDir, "profiles.yaml")
 			profiles, err := config.LoadProfiles(profilesPath)
 			if err != nil {
-				fmt.Fprintf(out, "✗ Profiles: %s\n", err)
+				fmt.Fprintf(out, "%s Profiles: %s\n", c.Red("✗"), err)
 				return nil
 			}
-			fmt.Fprintf(out, "✓ Profiles: %d profiles loaded\n", len(profiles))
+			fmt.Fprintf(out, "%s Profiles: %d profiles loaded\n", c.Green("✓"), len(profiles))
 
-			// Collect which providers are in use
 			providerProfiles := make(map[string][]string)
 			for _, p := range profiles {
 				providerProfiles[p.Provider] = append(providerProfiles[p.Provider], p.Name)
@@ -61,11 +62,11 @@ func newDoctorCmd() *cobra.Command {
 				}
 				_, err := exec.LookPath(info.Binary)
 				if err != nil {
-					fmt.Fprintf(out, "  ✗ %-8s (profiles: %s) — install: %s\n",
-						info.Binary, joinNames(profileNames), info.InstallURL)
+					fmt.Fprintf(out, "  %s %-8s (profiles: %s) — install: %s\n",
+						c.Red("✗"), info.Binary, joinNames(profileNames), info.InstallURL)
 				} else {
-					fmt.Fprintf(out, "  ✓ %-8s (profiles: %s)\n",
-						info.Binary, joinNames(profileNames))
+					fmt.Fprintf(out, "  %s %-8s (profiles: %s)\n",
+						c.Green("✓"), info.Binary, joinNames(profileNames))
 				}
 			}
 

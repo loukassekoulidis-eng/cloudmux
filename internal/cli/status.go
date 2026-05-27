@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/lukassekoulidis/cloudmux/internal/color"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 func newStatusCmd() *cobra.Command {
@@ -29,17 +31,19 @@ func newStatusCmd() *cobra.Command {
 				}
 			}
 
+			c := color.New(term.IsTerminal(int(os.Stdout.Fd())))
+
 			status, err := mgr.Status(profileName)
 			if err != nil {
 				return err
 			}
 
 			if !status.Valid {
-				fmt.Fprintf(cmd.OutOrStdout(), "✗ %s: not authenticated\n", profileName)
+				fmt.Fprintf(cmd.OutOrStdout(), "%s %s: not authenticated\n", c.Red("✗"), profileName)
 				return nil
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "✓ %s\n", profileName)
+			fmt.Fprintf(cmd.OutOrStdout(), "%s %s\n", c.Green("✓"), profileName)
 			fmt.Fprintf(cmd.OutOrStdout(), "  Identity: %s\n", status.Identity)
 			fmt.Fprintf(cmd.OutOrStdout(), "  Tenant:   %s\n", status.Tenant)
 			if !status.ExpiresAt.IsZero() {
