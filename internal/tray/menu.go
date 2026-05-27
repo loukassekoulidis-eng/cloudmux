@@ -10,118 +10,56 @@ import (
 	"github.com/lukassekoulidis/cloudmux/internal/session"
 )
 
-// buildMenu rebuilds the entire systray menu from the current state.
-func (a *App) buildMenu() {
-	systray.ResetMenu()
+const maxProfileSlots = 10
 
+type profileSlot struct {
+	menuItem    *systray.MenuItem
+	switchItem  *systray.MenuItem
+	refreshItem *systray.MenuItem
+	logoutItem  *systray.MenuItem
+	name        string
+}
+
+// buildMenu creates the static menu structure once. Called from OnReady on main thread.
+func (a *App) buildMenu() {
 	a.mu.Lock()
-	pendingDetects := make([]DetectedSession, len(a.pendingDetects))
-	copy(pendingDetects, a.pendingDetects)
 	profiles := make([]config.Profile, len(a.profiles))
 	copy(profiles, a.profiles)
-	statuses := make(map[string]*provider.SessionStatus)
-	for k, v := range a.statuses {
-		statuses[k] = v
-	}
 	a.mu.Unlock()
-
-	// Detected sessions at the top
-	for _, det := range pendingDetects {
-		title := fmt.Sprintf("New: %s (%s)", det.Provider, det.Info.Profile.Description)
-		parent := systray.AddMenuItem(title, "")
-
-		suggested := det.Info.SuggestedName
-		addItem := parent.AddSubMenuItem(fmt.Sprintf("Add as %q", suggested), "")
-		go a.handleAddDetection(addItem, det, suggested)
-
-		variants := nameVariants(suggested, det.Provider)
-		for _, v := range variants {
-			item := parent.AddSubMenuItem(fmt.Sprintf("Add as %q", v), "")
-			go a.handleAddDetection(item, det, v)
-		}
-
-		copyCmd := parent.AddSubMenuItem("Copy import command...", "")
-		go a.handleClick(copyCmd, func() { CopyImportCommand() })
-
-		fp := Fingerprint(det.Provider, det.Info.Profile)
-		dismiss := parent.AddSubMenuItem("Dismiss", "")
-		go a.handleDismiss(dismiss, fp)
-
-		ignore := parent.AddSubMenuItem("Ignore this account", "")
-		go a.handleIgnore(ignore, fp)
-	}
-
-	if len(pendingDetects) > 0 {
-		systray.AddSeparator()
-	}
 
 	// Profiles header
 	header := systray.AddMenuItem("Profiles", "")
 	header.Disable()
 
-	for _, p := range profiles {
-		status := statuses[p.Name]
-		title := formatProfileTitle(p, status)
-		parent := systray.AddMenuItem(title, "")
+	// Pre-allocate profile slots
+	a.profileSlots = make([]profileSlot, maxProfileSlots)
+	for i := 0; i < maxProfileSlots; i++ {
+		slot := &a.profileSlots[i]
+		slot.menuItem = systray.AddMenuItem("", "")
+		slot.switchItem = slot.menuItem.AddSubMenuItem("Switch (copy command)", "")
+		slot.refreshItem = slot.menuItem.AddSubMenuItem("Re-authenticate", "")
+		slot.logoutItem = slot.menuItem.AddSubMenuItem("Logout", "")
+		slot.menuItem.Hide()
 
-		if status != nil && status.Valid {
-			// Info submenu items (disabled, informational)
-			if status.Identity != "" {
-				info := parent.AddSubMenuItem(status.Identity, "")
-				info.Disable()
-			}
-			if status.Tenant != "" {
-				info := parent.AddSubMenuItem(fmt.Sprintf("Tenant: %s", status.Tenant), "")
-				info.Disable()
-			}
-			if !status.ExpiresAt.IsZero() {
-				remaining := time.Until(status.ExpiresAt)
-				info := parent.AddSubMenuItem(fmt.Sprintf("Expires in %s", formatRemaining(remaining)), "")
-				info.Disable()
-			}
-
-			switchItem := parent.AddSubMenuItem("Switch (copy command)", "")
-			pName := p.Name
-			go a.handleClick(switchItem, func() { CopyUseCommand(pName) })
-
-			refresh := parent.AddSubMenuItem("Refresh Token", "")
-			go a.handleClick(refresh, func() { OpenLoginTerminal(pName) })
-
-			logout := parent.AddSubMenuItem("Logout", "")
-			go a.handleLogout(logout, pName)
-		} else {
-			info := parent.AddSubMenuItem("Session expired or not logged in", "")
-			info.Disable()
-
-			reauth := parent.AddSubMenuItem("Re-authenticate", "")
-			pName := p.Name
-			go a.handleClick(reauth, func() { OpenLoginTerminal(pName) })
-
-			switchItem := parent.AddSubMenuItem("Switch (copy command)", "")
-			go a.handleClick(switchItem, func() { CopyUseCommand(pName) })
-
-			remove := parent.AddSubMenuItem("Remove Profile", "")
-			go a.handleRemove(remove, pName)
-		}
+		idx := i
+		go a.handleProfileSlot(idx)
 	}
 
 	systray.AddSeparator()
 
-	// Global actions
-	importItem := systray.AddMenuItem("Import Sessions...", "")
-	go a.handleClick(importItem, func() { a.runDetection() })
-
-	refreshAll := systray.AddMenuItem("Refresh All", "")
-	go a.handleClick(refreshAll, func() {
-		a.refreshStatuses()
-		a.buildMenu()
+	// Actions
+	a.importItem = systray.AddMenuItem("Import Sessions...", "")
+	go a.handleClick(a.importItem, func() {
+		go a.runDetection()
 	})
 
-	doctorItem := systray.AddMenuItem("Run Doctor", "")
-	go a.handleClick(doctorItem, func() {
-		a.refreshProfiles()
-		a.refreshStatuses()
-		a.buildMenu()
+	a.refreshAllItem = systray.AddMenuItem("Refresh All", "")
+	go a.handleClick(a.refreshAllItem, func() {
+		go func() {
+			a.refreshStatuses()
+			a.updateMenuTitles()
+			a.updateIcon()
+		}()
 	})
 
 	systray.AddSeparator()
@@ -133,9 +71,91 @@ func (a *App) buildMenu() {
 		case <-a.quit:
 		}
 	}()
+
+	// Populate slots with current profiles
+	a.updateMenuTitles()
 }
 
-// handleClick runs fn every time the menu item is clicked, until quit.
+// handleProfileSlot handles clicks on a pre-allocated profile menu slot.
+func (a *App) handleProfileSlot(idx int) {
+	slot := &a.profileSlots[idx]
+	for {
+		select {
+		case <-slot.switchItem.ClickedCh:
+			a.mu.Lock()
+			name := slot.name
+			a.mu.Unlock()
+			if name != "" {
+				CopyUseCommand(name)
+			}
+		case <-slot.refreshItem.ClickedCh:
+			a.mu.Lock()
+			name := slot.name
+			a.mu.Unlock()
+			if name != "" {
+				OpenLoginTerminal(name)
+			}
+		case <-slot.logoutItem.ClickedCh:
+			a.mu.Lock()
+			name := slot.name
+			a.mu.Unlock()
+			if name != "" {
+				go func() {
+					mgr, err := session.NewManager(a.configDir, a.registry, a.audit)
+					if err == nil {
+						_, _ = mgr.Logout(name)
+					}
+					a.refreshStatuses()
+					a.updateMenuTitles()
+					a.updateIcon()
+				}()
+			}
+		case <-a.quit:
+			return
+		}
+	}
+}
+
+// updateMenuTitles refreshes profile slot titles from current state. Safe from any goroutine.
+func (a *App) updateMenuTitles() {
+	a.mu.Lock()
+	profiles := make([]config.Profile, len(a.profiles))
+	copy(profiles, a.profiles)
+	statuses := make(map[string]*provider.SessionStatus)
+	for k, v := range a.statuses {
+		statuses[k] = v
+	}
+	a.mu.Unlock()
+
+	for i := 0; i < maxProfileSlots; i++ {
+		slot := &a.profileSlots[i]
+		if i < len(profiles) {
+			p := profiles[i]
+			status := statuses[p.Name]
+			title := formatProfileTitle(p, status)
+			slot.menuItem.SetTitle(title)
+			slot.menuItem.Show()
+
+			a.mu.Lock()
+			slot.name = p.Name
+			a.mu.Unlock()
+
+			if status != nil && status.Valid {
+				slot.refreshItem.SetTitle("Refresh Token")
+				slot.logoutItem.SetTitle("Logout")
+			} else {
+				slot.refreshItem.SetTitle("Re-authenticate")
+				slot.logoutItem.SetTitle("Remove Profile")
+			}
+		} else {
+			slot.menuItem.Hide()
+			a.mu.Lock()
+			slot.name = ""
+			a.mu.Unlock()
+		}
+	}
+}
+
 func (a *App) handleClick(item *systray.MenuItem, fn func()) {
 	for {
 		select {
@@ -147,121 +167,17 @@ func (a *App) handleClick(item *systray.MenuItem, fn func()) {
 	}
 }
 
-// handleAddDetection imports a detected session under the given name.
-func (a *App) handleAddDetection(item *systray.MenuItem, det DetectedSession, name string) {
-	for {
-		select {
-		case <-item.ClickedCh:
-			detCopy := DetectedSession{
-				Provider: det.Provider,
-				Info: &provider.ImportInfo{
-					SuggestedName: det.Info.SuggestedName,
-					Profile:       det.Info.Profile,
-					DefaultDir:    det.Info.DefaultDir,
-				},
-			}
-			detCopy.Info.Profile.Name = name
-			if err := ImportDetectedSession(a.configDir, detCopy); err != nil {
-				a.notifier.NotifyError(fmt.Sprintf("Import failed: %s", err))
-				continue
-			}
-			fp := Fingerprint(det.Provider, det.Info.Profile)
-			a.detector.Dismiss(fp)
-			a.refreshProfiles()
-			a.refreshStatuses()
-			a.mu.Lock()
-			a.pendingDetects = removeDetection(a.pendingDetects, fp)
-			a.iconState.SetNewSession(len(a.pendingDetects) > 0)
-			a.mu.Unlock()
-			a.updateIcon()
-			a.buildMenu()
-		case <-a.quit:
-			return
-		}
-	}
-}
-
-// handleDismiss marks a detected session as dismissed.
-func (a *App) handleDismiss(item *systray.MenuItem, fingerprint string) {
-	for {
-		select {
-		case <-item.ClickedCh:
-			a.detector.Dismiss(fingerprint)
-			a.mu.Lock()
-			a.pendingDetects = removeDetection(a.pendingDetects, fingerprint)
-			a.iconState.SetNewSession(len(a.pendingDetects) > 0)
-			a.mu.Unlock()
-			a.updateIcon()
-			a.buildMenu()
-		case <-a.quit:
-			return
-		}
-	}
-}
-
-// handleIgnore permanently ignores a detected session.
-func (a *App) handleIgnore(item *systray.MenuItem, fingerprint string) {
-	for {
-		select {
-		case <-item.ClickedCh:
-			a.detector.Ignore(fingerprint)
-			a.mu.Lock()
-			a.pendingDetects = removeDetection(a.pendingDetects, fingerprint)
-			a.iconState.SetNewSession(len(a.pendingDetects) > 0)
-			a.mu.Unlock()
-			a.updateIcon()
-			a.buildMenu()
-		case <-a.quit:
-			return
-		}
-	}
-}
-
-// handleLogout logs out the given profile.
-func (a *App) handleLogout(item *systray.MenuItem, profileName string) {
-	for {
-		select {
-		case <-item.ClickedCh:
-			mgr, err := session.NewManager(a.configDir, a.registry, a.audit)
-			if err == nil {
-				_, _ = mgr.Logout(profileName)
-			}
-			a.refreshStatuses()
-			a.buildMenu()
-		case <-a.quit:
-			return
-		}
-	}
-}
-
-// handleRemove removes the profile directory.
-func (a *App) handleRemove(item *systray.MenuItem, profileName string) {
-	for {
-		select {
-		case <-item.ClickedCh:
-			_ = RemoveProfileDir(a.configDir, profileName)
-			a.refreshProfiles()
-			a.refreshStatuses()
-			a.buildMenu()
-		case <-a.quit:
-			return
-		}
-	}
-}
-
-// formatProfileTitle produces a menu title showing profile name, status, and provider.
 func formatProfileTitle(p config.Profile, status *provider.SessionStatus) string {
 	if status == nil || !status.Valid {
-		return fmt.Sprintf("  %s  expired  %s", p.Name, p.Provider)
+		return fmt.Sprintf("  %s — expired  [%s]", p.Name, p.Provider)
 	}
 	if !status.ExpiresAt.IsZero() {
 		remaining := time.Until(status.ExpiresAt)
-		return fmt.Sprintf("  %s  %s  %s", p.Name, formatRemaining(remaining), p.Provider)
+		return fmt.Sprintf("  %s — %s  [%s]", p.Name, formatRemaining(remaining), p.Provider)
 	}
-	return fmt.Sprintf("  %s  valid  %s", p.Name, p.Provider)
+	return fmt.Sprintf("  %s — valid  [%s]", p.Name, p.Provider)
 }
 
-// formatRemaining returns a human-readable duration string.
 func formatRemaining(d time.Duration) string {
 	if d < 0 {
 		return "expired"
@@ -272,7 +188,6 @@ func formatRemaining(d time.Duration) string {
 	return fmt.Sprintf("%dh", int(d.Hours()))
 }
 
-// nameVariants generates alternative name suggestions for a detected session.
 func nameVariants(suggested, providerName string) []string {
 	var variants []string
 	base := suggested
@@ -290,7 +205,6 @@ func nameVariants(suggested, providerName string) []string {
 	return variants
 }
 
-// removeDetection filters out a detected session by fingerprint.
 func removeDetection(detections []DetectedSession, fingerprint string) []DetectedSession {
 	var result []DetectedSession
 	for _, d := range detections {

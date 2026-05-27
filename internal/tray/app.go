@@ -1,6 +1,7 @@
 package tray
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 	"sync"
@@ -35,6 +36,11 @@ type App struct {
 	IconYellow []byte
 	IconRed    []byte
 
+	// Menu item references (populated once in buildMenu)
+	profileSlots   []profileSlot
+	importItem     *systray.MenuItem
+	refreshAllItem *systray.MenuItem
+
 	quit chan struct{}
 }
 
@@ -56,18 +62,28 @@ func NewApp(configDir string, registry *provider.Registry, cfg config.Config, au
 // OnReady is the systray onReady callback. It sets the initial icon,
 // loads profiles and statuses, builds the menu, and starts background loops.
 func (a *App) OnReady() {
+	log.Println("OnReady: setting up")
 	systray.SetTitle("MUX")
 	systray.SetTooltip("cloudmux")
-	if a.IconIdle != nil {
-		systray.SetTemplateIcon(a.IconIdle, a.IconIdle)
-	}
 
+	// Load profiles synchronously so we can build menu on the main thread
 	a.refreshProfiles()
-	a.refreshStatuses()
+
+	// Build menu on main thread (required by macOS Cocoa)
 	a.buildMenu()
 
-	go a.detectionLoop()
-	go a.expiryLoop()
+	// Background: status checks and detection loops
+	go func() {
+		a.refreshStatuses()
+		// Update menu titles after status check
+		a.updateMenuTitles()
+		a.updateIcon()
+
+		go a.detectionLoop()
+		go a.expiryLoop()
+	}()
+
+	log.Println("OnReady: done")
 }
 
 // OnExit is the systray onExit callback.
@@ -162,7 +178,7 @@ func (a *App) runDetection() {
 	a.mu.Unlock()
 
 	a.updateIcon()
-	a.buildMenu()
+	a.updateMenuTitles()
 }
 
 // updateIcon sets the systray icon based on the current icon state.

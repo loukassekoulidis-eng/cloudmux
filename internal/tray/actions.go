@@ -6,20 +6,31 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/lukassekoulidis/cloudmux/internal/config"
 	"github.com/lukassekoulidis/cloudmux/internal/copydir"
 	"github.com/lukassekoulidis/cloudmux/internal/security"
-	"golang.design/x/clipboard"
 )
 
-func init() {
-	clipboard.Init()
-}
-
 func CopyToClipboard(text string) {
-	clipboard.Write(clipboard.FmtText, []byte(text))
+	switch runtime.GOOS {
+	case "darwin":
+		cmd := exec.Command("pbcopy")
+		cmd.Stdin = strings.NewReader(text)
+		cmd.Run()
+	case "linux":
+		// Try xclip, then xsel
+		for _, tool := range []string{"xclip", "xsel"} {
+			if _, err := exec.LookPath(tool); err == nil {
+				cmd := exec.Command(tool, "-selection", "clipboard")
+				cmd.Stdin = strings.NewReader(text)
+				cmd.Run()
+				return
+			}
+		}
+	}
 }
 
 func CopyUseCommand(profileName string) {
@@ -31,13 +42,7 @@ func CopyImportCommand() {
 }
 
 func OpenLoginTerminal(profileName string) error {
-	binary, err := os.Executable()
-	if err != nil {
-		binary = "cloudmux"
-	}
-	// The tray binary is cloudmux-tray, but we need the CLI binary.
-	// Assume cloudmux is on PATH.
-	binary = "cloudmux"
+	binary := "cloudmux"
 
 	switch runtime.GOOS {
 	case "darwin":

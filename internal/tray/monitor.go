@@ -39,7 +39,8 @@ func (a *App) expiryLoop() {
 		select {
 		case <-ticker.C:
 			a.refreshStatuses()
-			a.buildMenu()
+			a.updateMenuTitles()
+			a.updateIcon()
 		case <-a.quit:
 			return
 		}
